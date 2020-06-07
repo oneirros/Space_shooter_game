@@ -2,6 +2,7 @@ import pygame
 import sys
 from spaceship import MotherShip
 from spaceship import AlienShip
+from main_menu import  Menu
 from bullet import Bullet
 from pygame.math import Vector2
 import os
@@ -28,17 +29,20 @@ class Game(object):
         self.tps_delta = 0.0
         self.tps_delta_alien = 0.0
 
-        self.player = MotherShip(self, [600, 500], 75, 75)
+        self.player = MotherShip(self, [320, 600], 75, 75)
         self.aliens = []
 
+        menu = Menu(self)
+
         while True:
-
-
+            menu.mainLoop()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit(0)
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     sys.exit(0)
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+                    menu.run = True
 
             self.tps_delta += self.tps_clock.tick() / 1000.0
 
@@ -54,8 +58,10 @@ class Game(object):
 
             self.screen.fill((0, 0, 0))
             self.drawing()
+
             pygame.display.flip()
-            self.tps_max_alien += 0.005
+            self.tps_max_alien += 0.01
+
 
     def ticking(self):
 

@@ -82,9 +82,9 @@ class MotherShip(Ship):
         # bounce off the wall
         if self.position[1] <= 15:
             self.velocity[1] += 10
-        elif self.position[0] <= 2:
+        elif self.position[0] <= -15:
             self.velocity[0] += 10
-        elif self.position[0] > self.game.SCREEN_WIDTH - 50:
+        elif self.position[0] > self.game.SCREEN_WIDTH - 60:
             self.velocity[0] += -10
 
         # velocity of the ship
