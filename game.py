@@ -1,27 +1,22 @@
-import pygame
+"""Moduł łączący wszystkie elementy gry w całość."""
 import sys
+import random
+import pygame
+
+import constants
 from spaceship import MotherShip
 from spaceship import AlienShip
-from main_menu import  Menu
-from bullet import Bullet
-from pygame.math import Vector2
-import os
-import random
-import main_menu
+from menu import Menu
 
 
-
-class Game(object):
+class Game:
+    """Główna pętla gry."""
     def __init__(self):
-        self.SCREEN_WIDTH, self.SCREEN_HEIGHT = 700, 1000
-        self.BG = pygame.transform.scale(pygame.image.load(os.path.join("/Users/kuba/Documents/Python/shooter_game/images", "spacebg.jpg")), (self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pygame.init()
         pygame.font.init()
-        self.main_font = pygame.font.SysFont("comicsans", 30)
 
-        self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
+        self.screen = pygame.display.set_mode((constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT))
         pygame.display.set_caption("SpaceShooterGame")
-        self.level_label = self.main_font.render("level", 1, (255, 255, 255))
 
         self.tps_max_alien = 75
         self.tps_max = 100
@@ -29,20 +24,22 @@ class Game(object):
         self.tps_delta = 0.0
         self.tps_delta_alien = 0.0
 
-        self.player = MotherShip(self, [320, 600], 75, 75)
+        self.player = MotherShip(
+            self, constants.LOCATION_PLACE,
+            constants.PLAYER_SHIP_WIDTH, constants.PLAYER_SHIP_HEIGHT)
         self.aliens = []
 
-        menu = Menu(self)
+        self.menu = Menu(self)
 
         while True:
-            menu.mainLoop()
+            self.menu.main_loop()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit(0)
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     sys.exit(0)
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
-                    menu.run = True
+                    self.menu.pause_run = True
 
             self.tps_delta += self.tps_clock.tick() / 1000.0
 
@@ -53,18 +50,21 @@ class Game(object):
             self.tps_delta_alien += self.tps_clock.tick() / 1000.0
 
             while self.tps_delta_alien > 1 / self.tps_max_alien:
-                self.aliens.append(AlienShip(self, [random.randint(15, self.SCREEN_WIDTH - 50), -50], 50, 50))
+                self.aliens.append(
+                    AlienShip(self, [random.randint(15, constants.SCREEN_WIDTH - 50), -50], 50, 50))
                 self.tps_delta_alien = 0.0
-
+            self.score_label, _ = constants.Fonts.INFO_FONT.render(
+                text="score = {}".format(self.player.score), fgcolor=constants.Colors.WHITE)
             self.screen.fill((0, 0, 0))
             self.drawing()
-
+            if self.player.health == 0:
+                self.__init__()
             pygame.display.flip()
+            self.menu.pause_loop()
             self.tps_max_alien += 0.01
 
-
-    def ticking(self):
-
+    def ticking(self) -> None:
+        """Ticking."""
         self.player.control()
         for bullet in self.player.bullets:
             bullet.movement()
@@ -75,8 +75,10 @@ class Game(object):
             for bullet in alien.bullets:
                 bullet.movement()
 
-    def drawing(self):
-        self.screen.blit(self.BG, (0, 0))
+    def drawing(self) -> None:
+        """Rysuje elementy głównej pętli oraz sprawdza kolizje."""
+
+        self.screen.blit(constants.BG, (0, 0))
         self.player.drawing()
 
         for alien in self.aliens:
@@ -88,16 +90,21 @@ class Game(object):
                     alien.bullets.remove(bullet)
                     self.player.health -= 10
 
+            if alien.collision(self.player.position, self.player.mask):
+                self.player.health -= 50
+                self.aliens.remove(alien)
 
         for bullet in self.player.bullets:
             for alien in self.aliens:
                 if bullet.collide(alien):
                     self.aliens.remove(alien)
                     self.player.bullets.remove(bullet)
+                    self.player.score += 10
 
-        self.screen.blit(self.level_label, (1, 1))
+        self.score_label = self.score_label.convert_alpha()
+        pos = self.score_label.get_rect(center=(65, 10))
+        self.screen.blit(self.score_label, pos)
+
 
 if __name__ == "__main__":
     Game()
-
-
